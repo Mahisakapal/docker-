@@ -1,0 +1,56 @@
+#########################################################################
+Now we are going to install docker on redhat os 
+follow below linke for installtion dont forget to sert the service 
+https://docs.docker.com/engine/install/centos/
+yum install docker-ce-18.09.1 docker-ce-18.09.1 containerd.io  #we have selected the this vrs 
+                    |               |
+                    |               | 
+                    |_______________|_______________ this is the vr number or tag 
+
+
+#########################################################################
+########## now we are going to start our fisrt container ################
+#########################################################################
+
+##### to get root access of your EC2 instance use sudo su 
+                        sudo su 
+
+# to check your container #
+: docker container ls 
+
+# to check all the stop start container we use #
+: docker container ls -a 
+
+# to check your images    #  
+:docker image ls 
+
+# when youo want to start container you can user 
+:docker container start 56fsgfg786
+
+56fsgfg786 = this is the containerID    here you can provide starting few nuber also but make sure it is the uniq
+
+# we can start our first docker using below cmd
+                        |--------------------------------- d for demon to run background 
+                        |                                  it for allow tarminal for this imag     
+docker container run -dit ubuntu /bin/bash
+                                    |________________________
+                                                             This is also as when we get access use bash
+docker container run -it ubuntu /bin/bash                   # without d we can run it in front  
+                        # if you want to out form container don't exit press (Ctl + p + q)                                                            
+
+# docker ps -a -f status=exited  # this will show all exited docker 
+
+docker container rm fecbdf56d17d     # fecbdf56d17d = containerID
+
+# for force remove use -f 
+docker container rm -f fecbdf56d17d   
+
+
+# be cearfull befor using this cmd
+ docker rm $(docker ps -a -f status=exited -q)
+
+
+
+
+
+
