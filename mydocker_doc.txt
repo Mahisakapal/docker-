@@ -49,8 +49,188 @@ docker container rm -f fecbdf56d17d
 # be cearfull befor using this cmd
  docker rm $(docker ps -a -f status=exited -q)
 
+# when we want to check all system info about container like ip hostname 
+docker inspect f11e06e92fe5      # f11e06e92fe5 = containerID
+
+# to check this logs of your container use below cmd 
+docker container logs f11e06e92fe5      # f11e06e92fe5 = containerID
+
+# to check top or curent prosess we have to use 
+docker container top f11e06e92fe5      # f11e06e92fe5 = containerID
 
 
+# to check memory cpu & network use we use bellow cmd
+docker container stats          # don't provide any containerID
+
+# creat container with port maping 
+docker container run -d -p 8090:80 ngnix 
+
+                                        # 8090 you can access it from out :80 is container port 
+                                         # we use -p to defind port manuly -P is for tack port automaticly 
+
+# you can give a name of your container enstaint of randomm name 
+docker container run -d -p 8090:80   --name mycontainer ngnix  
+docker container run -itd -p 8090:80   --name mycontainer ngnix  
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@           netstat -nltp = use to check your host opne port               @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+# when you want to go inside your container use can use below cmd
+docker container exec -it f11e06e92fe5 /bin/bash 
+
+exec = to excut 
+it = interactive tarminal
+/bin/bash = this is interactive langweg it is defrent for bindows 
+
+# if you want to rename your container      |-------------this my new name of container
+docker container rename f11e06e92fe5 MY-web-nginx 
+                    | 
+                    this is main cmd to rename container    
+
+# you can restart container 
+docker container restart containerID
+
+
+# u want to connect detach container to your cournt tarminal use bellow cmd 
+docker container attach f11e06e92fe5      # f11e06e92fe5 = containerID
+
+# u can do container stop or kill 
+docker container stop f11e06e92fe5      # f11e06e92fe5 = containerID
+docker container kill f11e06e92fe5      # f11e06e92fe5 = containerID
+
+docker container wait f11e06e92fe5      # f11e06e92fe5 = containerID
+but we are not use this it will only give you exit status 
+
+
+# to do container pause or unpause we use below cmd
+docker container pause f11e06e92fe5      # f11e06e92fe5 = containerID
+docker container unpause f11e06e92fe5      # f11e06e92fe5 = containerID
+
+
+# if you want to delete the all exited container than use bellow cmd 
+docker container prune 
+
+# if you want to know the the port of container 
+docker container port  containerID or container_name 
+
+# we can create container in this we never run container just creat 
+docker container create image_name 
+
+# v can check diffrent beetwin imag & container what file acthuly change 
+docker container diff containerID  
+# the output is in c a d 
+c= creat
+a= add
+d = delete
+u =update
+
+# this will watch a log 
+watch 'docker container diff containerID' 
+
+# copy cmd
+docker container cp tmp/ f11e06e92fe5:/home/
+                  |__|__________|_______|________________this is cp cmd to copy  
+                     |__________|_______|_________________this is path from where we copy file    
+                                |_______|________________ containerID : use 
+                                        |_________________this is the path were we past the file 
+
+# we can export our container in tar to give or upload it 
+docker container export -o my_container.tar
+or 
+docker container export > my_container.tar
+
+# u can import it also
+docker container import my_container.tar new_name
+
+#now we can look how to creat a image from container
+
+docker container commit --author "amardip sakapal" -m "msg this is new imge" fafd23a559ee new_name_of_image
+
+# how to push your image to docker hub first we have to tag it 
+docker image tag my_image_name mahisakapal/new_name_of_image
+
+# to push on hub 
+docker push mahisakapal/new_name_of_image
+
+mahisakapal/new_name_of_image = name or tag of your image 
+
+# we can custmig the container & image ls view 
+docker image ls --format '{{.ID}}, {{.Repository}}'  # we have use , to sepret ID & Repository but you can use other char also 
+
+
+# you can check the history of your  image 
+docker image history ubuntu
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                    docker image ls == docker images 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+docker image rm = docker rmi  # use -f to remove force fully 
+
+## u can inspect the image also 
+docker images inspect ubuntu # use | less to view nicely 
+
+## be cearfull befor runing this cmd this will remove all the imag from your system
+docker image prune 
+
+
+# to save your image file 
+                            |-----------------------------------------this is the image name 
+docker image save kalilinux/kali-rolling  > my_imge.tar
+# be cearfull when u have more same name imge & you provide same cmd to save it will compress all image in one tar 
+# to avoide this we can provide the tag like (ubuntu:14.04)
+
+# to load the image from your tar to normal 
+docker image load < my_image.tar
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we will looking dockerfile 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+# to run the file without mantion it creat file only name of dockerfile
+If you want to use other name than use filename.dockerfile in extantion  (-f )
+
+#we are looking file sintax 
+Note : when u use vi or vim after escap u can use set number look like (:set number )
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+FROM ubuntu
+RUN apt-get update && apt-get install -y tree
+RUN touch {1..10}.txt 
+LABEL name ='amardip'                            # LABEL is only for tag you can see this in inspect 
+LABEL email = 'mahisakapal@gmail.com'
+ENV NAME amardip
+ENV PASS pasword@123                            #ENV = envorrment  to check envorrment use env cmd 
+WORKDIR /home/                              # this is set your working dire 
+RUN apt-get update && apt-get install -y openssh-server && apt-get install -y python  # we inta python & openssh
+RUN useradd -m -d /home/amardip -k /etc/custom.skell -s /bin/bin -c "No Active Member of TecMint" -u 1027 amardip # craet new user
+RUN whoami > /tmp/1.txt  # to check the user 
+USER amardip             # USER = su in dockerfile (USER root)
+RUN whoami > /tmp/1.txt
+RUN mkdir -p /tmp/project               # creat folder 
+COPY /myfolder/  /tmp/project           # copy folder
+ADD /myfolder/  /tmp/project           # copy folder if u add tar it will copy contian or when we use url it copy contain from that url
+CMD ["python]                          # this is use to run your cammand use [" your cmd "] it run when container start & should be only 1 
+                                        # it when u run more than one last one will run only
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# save file and type cmd 
+Note  :docker image ls -a |wc     # this is to know the all lear of image and total lear 
+        don't use run cmd more it will creat a new lear very time 
+
+
+docker image build -t myimge:1 .
+ # -t = tag 
+ # myimge:1 = name of your image shuld be 
+ # . = when u have dockerfile in same dir & also name as dockerfile than use "."
+ @@@ when you create container from this images dont forget to pas tag also laike (ubuntu:1)
+ 
 
 
 
