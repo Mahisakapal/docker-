@@ -236,7 +236,7 @@ docker image build -t myimge:1 .
  @@@ when you create container from this images dont forget to pas tag also laike (ubuntu:1)
  
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-                                   we will looking volume
+                                   we are looking volume
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 # we use docker volume to save our container data it's like we attach our folder with container
@@ -288,8 +288,78 @@ docker run -it --mount type=bind,source=$(pwd),target=/tmp/mydata/ ubuntu bash
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-                                   we will looking Docker networking
+                                   we are looking Docker networking
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+Docker network ls                                               # to list all avilabe network
+
+this is output
+
+NETWORK ID          NAME                DRIVER              SCOPE
+cb9802cd3a92        bridge              bridge              local    = this is defulet network for every container
+30e4ea466703        host                host                local
+4bcd5bea6986        none                null                local
+
+# we can check how many container are connected with our network 
+ 
+ docker network inspect bridge 
+                             |___________________this is name of network ot u can give network id 
+
+docker network create -d bridge mynetwork   
+
+-d = DRIVER
+bridge = DRIVER name 
+mynetwork = given name to u r network
+
+to know more about network creat cmd use
+docker network create --help
+
+
+# u can check your network all deteals 
+docker network ls 
+docker network inspect mynetwork
+ifconfig 
+
+
+# we can connect our container to network using below cmd 
+                    
+docker run -it --network mynetwork --name networktest ubuntu bash 
+                     |_______|___________________________________________ use this keyword for network   
+                             |________________________name of my network
+
+docker run -it --network host --name networktest ubuntu bash
+                    |_______|___________________________________________ use this keyword for network   
+                             |________________________it will use your host network same as hostnetwork in VM
+
+# u can't create other network with bridge DRIVER
+        we have none to not connect any one network
+(ip a ) show u call adaper info in your host machin 
+
+# u can communicat with 2 container which is persent in same network like (mynetwork) or like defulet one 
+but when we have 2 container in defrent defrent network like one mynetwork & other one in defulet one 
+than we have to use port with your hots machin ip not container ip 
+
+# to connect one or more network use bellow cmd 
+docker network connect mynetwork containerID
+                    |       |____________|_______newtwork name 
+                    |____________________|__________to connect network    
+                                         |_______________this is containerID
+
+
+                                    @@@@@@@@@@@@@@@@@@@@@@
+
+if you create container with host or none network than you cant connect other network
+
+docker network rm mynetwork   # this will remove the mynetwork 
+                       |_______________________ network name 
+                       
+Don't use this it will remove all unuse network ( docker network prune)     
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we are looking Docker DNS
+
+we can use docker container kill containerID to stop container forcefully
+########### if you create any network like (mynetwork) that have DNS anable
+u can ping using containerID & container_name
 
 
