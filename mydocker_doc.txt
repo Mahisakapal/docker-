@@ -206,7 +206,7 @@ ENV NAME amardip
 ENV PASS pasword@123                            #ENV = envorrment  to check envorrment use env cmd 
 WORKDIR /home/                              # this is set your working dire 
 RUN apt-get update && apt-get install -y openssh-server && apt-get install -y python  # we inta python & openssh
-RUN useradd -m -d /home/amardip -k /etc/custom.skell -s /bin/bin -c "No Active Member of TecMint" -u 1027 amardip # craet new user
+RUN useradd -m -d /home/amardip -k /etc/custom.skell -s /bin/bin -c "No Active Member of TecMint" -u 1027 amardip # craet new user u can set passwrs also
 RUN whoami > /tmp/1.txt  # to check the user 
 USER amardip             # USER = su in dockerfile (USER root)
 RUN whoami > /tmp/1.txt
@@ -215,9 +215,13 @@ COPY /myfolder/  /tmp/project           # copy folder
 ADD /myfolder/  /tmp/project           # copy folder if u add tar it will copy contian or when we use url it copy contain from that url
 CMD ["python]                          # this is use to run your cammand use [" your cmd "] it run when container start & should be only 1 
                                         # it when u run more than one last one will run only
-
-
-
+EXPOSE 22 80                            # to open the port 
+ENTRYPOINT ["tree"]                     # here we can run any excutabale file we test here with tree u can add cmd after this also
+CMD ["version"]                         # so will take tree from endpoint & add version (tree - version)
+or 
+ENTRYPOINT["/tmp/test.sh"]            # it will use to run script , u can pass the argument for script here also 
+                                       # docker run -it myimge:1 amardip 
+                                                                    |--------------- this is argument
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # save file and type cmd 
@@ -231,6 +235,61 @@ docker image build -t myimge:1 .
  # . = when u have dockerfile in same dir & also name as dockerfile than use "."
  @@@ when you create container from this images dont forget to pas tag also laike (ubuntu:1)
  
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we will looking volume
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+# we use docker volume to save our container data it's like we attach our folder with container
+# we have 2 methode volume & bind mount & 3rd one is tempfs mount = this is use for temp writerbale lear 
+
+docker volume ls  # to check volume
+# u can check container volume info by inspect cmd 
+docker image inspect mysql 
+
+@@@@@@@@@@@@@@@@@@@@@@
+IMP    docker run -d --name testmysql -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql # this is way to run mysql docker -e for envorrment we set without password =true
+
+# we can inspect the volume also 
+docker volume inspect volumeID 
+# we can contain other valume and attach it :var/lib/mysql   |----------------this is volume id 
+docker run -dit --name testmysql -v 48425cd11d1d5f749e030baaf6540a95a77313ffbcfaf7e9a5849a6b63f4f3e7:/var/lib/mysql mysql
+
+# here we just attach old volume to our new container
+                                          |---------------------------it will create a volume while runing this container or if it exist than it will attach  
+docker run -dit --name testmysql -v myvolume:/var/lib/mysql mysql
+
+docker volume create mytest                                 # to creat new volume
+
+# becearfull to use this cmd becearfull it will delete all unuse or detach volume
+docker volume prune
+
+# when u want to remove volume which is connect to container u have to stop(rm) that container first that run cmd 
+docker volume rm volumeName 
+
+########################################### now we look bind methode for volume ###########################################
+# bind same as shear option in vm & windows 
+
+docker run -it -v /home/ec2-user/myfolder:/tmp/mydata/ ubuntu bash
+                |    -------------------  |  
+                |            |            |___________________________ after : path of your container where we want to bind if it's not persent than it will craete thatt folder   
+                |            |              
+                |            |____________________________________this is my host folder i want to attach or bind with container    
+                |____________|______ -v for volume
+                             |   
+                             |________________________ if u want to attach or bind your curent dir than use $(pwd)   
+                                                        insented of this /home/ec2-user/myfolder & always give full path 
+  
+docker run -it -v $(pwd):/tmp/mydata/ ubuntu bash                                                      
+
+another methode long methode
+
+docker run -it --mount type=bind,source=$(pwd),target=/tmp/mydata/ ubuntu bash 
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we will looking Docker networking
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 
