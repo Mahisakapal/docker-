@@ -196,7 +196,7 @@ If you want to use other name than use filename.dockerfile in extantion  (-f )
 #we are looking file sintax 
 Note : when u use vi or vim after escap u can use set number look like (:set number )
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
+#ARG PYTHON_VERSION              # use when you mantion in docker-compose.yml
 FROM ubuntu
 RUN apt-get update && apt-get install -y tree
 RUN touch {1..10}.txt 
@@ -222,6 +222,7 @@ or
 ENTRYPOINT["/tmp/test.sh"]            # it will use to run script , u can pass the argument for script here also 
                                        # docker run -it myimge:1 amardip 
                                                                     |--------------- this is argument
+RUN pip install -r requirements.txt  # this cmd install all app wihich is mantioin in this txt file                                                                     
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # save file and type cmd 
@@ -352,7 +353,7 @@ if you create container with host or none network than you cant connect other ne
 
 docker network rm mynetwork   # this will remove the mynetwork 
                        |_______________________ network name 
-                       
+
 Don't use this it will remove all unuse network ( docker network prune)     
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -361,5 +362,457 @@ Don't use this it will remove all unuse network ( docker network prune)
 we can use docker container kill containerID to stop container forcefully
 ########### if you create any network like (mynetwork) that have DNS anable
 u can ping using containerID & container_name
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we are looking registry
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+registry is use to save u r container localy and access it in localy
+
+first pull registry imge & it lesan only 5000 port 
+docker pull registry
+
+docker run -d --name my_registry -p 5050:5000 registry   # this will up u r registry
+
+you can access it form other system useing belw URL 
+
+http://13.233.91.117:5050/v2/_catalog
+            |__________|________|_________________________this can be your local ip also 
+                       |________|________________________________ we use 5050 from out side acthuly it is 5000 we just map it with 5050
+                                |____________________this is main URL (/v2/_catalog) 
+
+u can check how many image we have local also useing this url
+
+u can push image in registry in registry container we have defulet volume where we can save our image
+don't delete this volume if u remove this container u can attach this volume to other container
+/var/lib/registry it is always local means it container to your local host but you can attach s3 or also azure storeg
+
+# as you know when we phus image it have docker hub addres in front of this so we have to give registry addres
+for this we tag image with local ip
+
+docker image tag mysql 127.0.0.1:5050/mysql_local
+                    |           |       |_____________ new name of image u can give any  
+                    |           |_______________this is local ip of registry with port 
+                    |________________this is origlan name of image which you have to push
+
+
+# u can pull image from your local registry 
+
+docker pull 127.0.0.1:5050/mysql_local
+
+# we can only access only 127.0.0.1 without this ip no any other ip  allow to push
+
+so you add demon.json and add the entry 
+
+{
+    "insecure-registry" : [192.168.1.43:5000]
+}
+
+and add this file or mmove the file
+
+mv demon.json /etc/docker
+
+this file allow any unsecurly but it allow
+
+###### but now we make secure the registry now 
+
+we make dir for certfcat 
+mkdir certs 
+
+for redhat create certfcat
+openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs/domain.key -x509 -days 365 -out certs/domain.crt
+
+it will creat a 2 file domain.key & domain.crt
+
+than go to /etc/docker and creat certs folder (mkdir certs.d)
+in side this create folder which you give ther while creating certfcat like (repo.docker.local:5000)
+
+than move domain.crt 
+
+cp domain.crt  /etc/docker/certs.d/repo.docker.local:5070/ca.crt
+
+and than you have to agin run the registry container
+
+docker run -d -p 5070:5000 --name my_registryt -v $(pwd)/certs/:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry
+
+so you have to use bellow tag now becoz we use repo.docker.local
+
+docker image tag nginx repo.docker.local:5070/my_nginx # this is to tag on local registry
+
+docker image push repo.docker.local:5070/my_nginx # this is push  local registry
+
+you have inter this is in hostfile 
+
+and we can set athunthiction also 
+for this we have to creat registry with bellow parametre also
+
+mkdir auth
+
+docker run --entrypoint htpasswod registry -bnB amardip password@123 >auth/htpasswd
+
+after this 
+
+docker login repo.docker.local:5070
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we are looking docker compose 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Docker compose is same like dockerfile but docker craete a image only compose creat container volume , network
+
+it suport yml & json also
+
+installtion 
+1 )   sudo curl -L "https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+2 )   sudo chmod +x /usr/local/bin/docker-compose
+
+3 )   sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+4)      docker-compose --version
+
+######################################################################################################
+
+so it run by type bellow cmd in -d is for run in decthaed mode up to urn docker-compose.yml file
+
+docker-compose up -d 
+
+when you run this cmd docker-compose.yml file should be there in your curent dir 
+
+to stop or delete the what you create from docker-compose file use bellow cmd
+
+docker-compose down    # it will stop everything but not volume to stop volume check bellow cmd
+
+docker-compose down --volume   # it will remove the volume also 
+
+###################### create file with name docker-compose.yml
+Note: while writing compose file text position is most IMP like margive belwo 
+Note: if you want to use custom img than dont use imge use build with . this "." means curent dir
+ dockerfile shuld in same dir
+====================================================================================================
+vi docker-compose.yml  
+====================================================================================================
+
+version : '3'                   # its depend on your docker engen which version will suport to you 
+services :                      # its one or more service like you can give any to like nginx =webapp mysql = db it for our refrence 
+    webapp :                    # name of our service it can be anything your network also come in service
+        image : nginx             # we selected nginx but you can take any image also 
+        ports :                  # to open a port & it shuld be in next or bellow line only
+            - "8080:80"
+
+    webapp1 :
+        build : .
+        ports :
+            - "8081:80" 
+        volumes :
+            - /myfolder/:/tmp/  
+        image : repo.docker.local:5050/mycustumimg # when we use build and image than imge cmd use as tag it wll rename your image 
+
+    webapp3 :
+        build : 
+            context : .             # in this in. in build we dont have to use . but we can give path context here we use ssame dir 
+                                    # conseder as docker-compose is in same folder
+            dockerfile : Docker     # here we have to pass Dockerfile name it chould be anything but should in present in abow folder
+            args:                   # when u use mantioin ARG in dockerfile file like befor FROM ARG PYTHON_VERSION
+                - PYTHON_VERSION=8.4-alpine     
+        ports :
+            - "8081:80" 
+        volumes :
+            - /myfolder/:/tmp/  
+        image : my_image_name
+        network :                   # it will use testnetwork becearfull about marjine it shuld be under user container
+            - testnetwork  
+        enviroment:                 # u can set n number of enviroment verable 
+            - name=amardip    
+        env_file :                  # this is use to give your enviroment file path
+            - . file_name.txt       # we use . for curent dire and file name 
+
+network :                       # it will create 2 new network becearfull about marjine it is pariler to service 
+    testnetwork :
+    mynetwork :
+
+volumes :                   # it create volume becearfull about marjine it is pariler to service 
+    myvolume :
+====================================================================================================
+
+  dockerfile : Docker     # here we have to pass Dockerfile name it chould be anything but should in present in abow folder
+            args:                   # when u use mantioin ARG in dockerfile file like befor FROM ARG PYTHON_VERSION
+                - PYTHON_VERSION= ${PYTHON_VERSION}      # to use we need .env file in same dire & shuld have entry for this verable
+                                                         PYTHON_VERSION=3.8-alpine                     
+====================================================================================================
+    save abow file & run cmd 
+
+    docker-compose up -d 
+
+if u r container need network than it will create automaticly
+
+
+# if change the any configration & run this file will create only container for change
+# if you run this agin it will never create 4 if the configration is same it will just update the container
+# if you want to run upu but file name is change it will give error to resolve it run file 
+
+docker-compose -f docker-composeOther.yml up -d 
+                |       |_________________this is my file not regural name 
+                |______________this is flag shulde use if file name is change    
+
+
+
+docker-compose -f docker-composeOther.yml down
+
+docker-compose create           # it will only create container but not run and not craete network
+
+docker-compose rm               # it will remove the what we make from this compose not network
+
+docker-compose up --no-start    # it will create network & container also but not start 
+
+docker-compose start            # it will start stop container
+
+docker-compose stop
+
+docker-compose restart
+
+docker-compose image            # this is show image of docker 
+
+docker-compose ls               # show container list 
+
+docker-compose pause            # it is pause the container
+
+docker-compose unpause          # it is unpause the container
+
+docker-compose kil;             # it kill the container
+
+docker-compose port webapp 80   # it will show port webapp service 80 number bind with which port 
+
+docker-compose logs             # to see your logs of container
+
+docker-compose logs -f          # to follow long means cuntinuse monitaning 
+
+docker-compose exec webapp1 ls                      # exec is to run any cmd here we run on webapp1 container
+
+docker-compose run webapp1 ls                       # same as abow but it create new container run cmd & exit 
+
+docker-compose  pull            # pull image from dockerhub whic we need for docker compose
+
+docker-compose push             # it will push to docker hub
+
+docker-compose scale webapp=2 webapp1=4     # scale use to create container number you mantioin 
+
+docker-compose top              # show the procces 
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we are looking docker swarm  
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+docker swarm use to manage docker host cluster or more than 1 docker hosts
+
+we can run master and worker both on docker host but we can set  host machin master only not allow worker to run
+
+your manager or master should allways in odd number 1 , 3, 7, good to keep max 7 only but worker u can do many
+
+till work good till down (number of master -1 )/2  like (7-1)/2 = 3 
+
+worker or master making communicat but need TLS certfcat 
+
+====================================================================================================
+now we will install docker swarm
+
+we just wnat docker pre install & than check docker info & see the swarm status
+to activet swarm use bellow cmd 
+
+docker swarm init                           #on whic host there you want master or manger  it will give you a url like belwo
+                                         docker swarm join --token SWMTKN-1-3tbnk0r0uk60vb9v238ivh6t6lp4clksq4niz5v6nowjmwqjtp-7a30ydkgd6g3w5mrzy81ogqmr 172.31.9.36:2377
+                                        when we want to connect our other work to master you have to paset this token
+
+docker node ls                              # it will show active node in your host & it will only run on master 
+
+
+docker swarm join-token worker           # this is use when we los our first token file tha you can use this cmd 
+
+docker swarm join-token manager          # use to create token for join manager
+
+docker swarm leave                       # run on worker node to out from cluster 
+
+docker  node rm  psbu3x5x5npl7eifwff7bweyn                       # run on manager to remove node pass hostname or node ID also 
+
+docker  node rm  -f psbu3x5x5npl7eifwff7bweyn           # same but we are doing this forcefully
+
+docker node inspect psbu3x5x5npl7eifwff7bweyn           # to know more about the node 
+
+docker node promote worker1           # use for make your worker manager u can pass hostname or node id 
+
+docker node demote psbu3x5x5npl7eifwff7bweyn        # to set your promoted mager as worker
+
+docker service create -d nginx ping 172-31-9-36         # here we use service to parfom any tsak we create nginx send in detach mode -d & ping 172-31-9-36 this ip 
+
+docker service ls                           # show your service status 
+
+docker service rm ec7oury4zhn9              # to remove runing service we ec7oury4zhn9 serviceID 
+
+docker service inspect ec7oury4zhn9(serviceID)
+
+docker service logs ec7oury4zhn9            # to see logs we use serviceID
+
+docker service ps ec7oury4zhn9              # to see more about service 
+
+docker service create -d --replicas 4 -p 8090:80 nginx  # we use -- replicas to run connect number time if you map port than you can a on any node ip 
+
+# when we set a number of replicas if  some of replicas have or shutdown it will create new replicas and maintend replicas
+
+docker service scale 5hf6xy68id8z=6   # this will set or increse or reduce your number of quty after serviceID=numberof replicas
+
+====================================================================================================
+docker swarm visulazer to see what going on in swarm in your webbrowser 
+run bellow cmd on manager node 
+
+docker service create \
+  --name=viz \
+  --publish=8080:8080/tcp \
+  --constraint=node.role==manager \
+  --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+  dockersamples/visualizer
+====================================================================================================
+it is accessble from any ip of your node which is ther in cluster 
+
+# if we want to achive archite like we want one node of service on every host
+
+docker service create --mode=global -p 8020:80   nginx   # --mode=global will set one node on every host if you have 4 host than it wil create 4 node 
+                                                         # IMP when you add new host in your cluster it will run  one node on that host also no need to do this manuly
+
+# if you want to run ther service on particuler host or node like manger or on worker
+
+docker service create -d --replicas 4 --constraint=node.role==manager -p 8090:80 nginx 
+
+docker service create -d --replicas 4 --constraint=node.role==worker -p 8090:80 nginx 
+
+# abow you can set --constraint=node.role==manager  here we set manager but we can set 
+
+# abow is the bilt in role but we can create our onw also to create this we just label our host 
+
+docker node update --label-add="ssd=true" ij3kv62juetsz9ihsk6tdhd82    # it will add lable ssd=tur but u can use anything good RAM ij3kv62juetsz9ihsk6tdhd82= this hostID or hostname
+
+docker service create --constraint=node.label.ssd==true -d --replicas 4 -p 8090:80 nginx 
+
+# and if you want to do lable without cmd than 
+
+go to /ect/docker & create a file deamon.json 
+edit this file if it is blank add the bellow connect
+
+{
+    "labels" : ["name:amardip"]
+}
+
+than restart docker service on this host use below cmd 
+
+docker service create --constraint="engine.labels.name==amardip" --replicas=4 -d  nginx 
+
+we have 3 avilabety in node 
+
+################## imp docker not deing REloadbalancing   ##################
+
+Active = avilabe to use or ready to use
+docker node update --availability=active ij3kv62juetsz9ihsk6tdhd82          #we can use hostname or hostID
+
+pause  = it runing with your old task but never ready to tack any new work mostly use for dubing 
+docker node update --availability=pause ij3kv62juetsz9ihsk6tdhd82     #we can use hostname or hostID
+
+drain = when we want to do mantence on our host to shift the curent work load on other curentner 
+docker node update --availability=drain ij3kv62juetsz9ihsk6tdhd82  
+
+docker service update --image ubuntu ij3kv62juetsz9ihsk6tdhd82              # it will change the os or image in service ij3kv62juetsz9ihsk6tdhd82  we change ngnix to ubuntu
+
+we can reserve cpu & memory on host or node as we as we can set limite the cpu & memory
+
+we have docker secret to save most IMP info like password
+
+docker secret create mypassword -           # here we tack input using -
+
+or 
+
+docker secret create mypassword myfilename  # here we tack input from file passing file name 
+
+we can use this secret when we provide secret & time to creation of service 
+
+docker service create -d --secret mypassword --replicas 4 -p 8090:80 nginx
+
+when it is up your secret is ther in same container cd/run/secret/mypassword
+
+# eneter your infromation her & tha press ctl+d
+
+docker secret ls
+###########################################################
+
+docker network when we crete is swarm it automaticly creat ingress network 
+
+ingress = is use when we r going to use port it help us to mage port if we have 2 node both lisen same port 
+it have inbuild loadbalcer ot manager a ports also & it's use overlay driver 
+
+undstand overly is one comman network for communication
+
+docker network create -d overlay myingress      # this is how we craete ingress network with overlay dirver 
+
+docker service create -d  --network myingress ubuntu   # this is how we usee our network for service 
+
+you can not use ingress or overlay network for runing container if same network is already use in swarm but u can create new one and try it 
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                   we are looking docker stack  
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ 
+ docker stack user same as  docker-compose file but it runs on your cluster or swarm
+ it's support also same sentex ot keyword whice supported by docker-compose
+
+ docker stack deploy -c docker-compose.yml myservice 
+                      |         |               |_________________u r service name you can give any
+                      |         |_____________ this is our file ename u can give any   
+                      |
+                      |_______________________for compose  
+
+
+docker stack ls 
+
+docker stack rm myservice
+
+docker event to chekc all event in your cluster
+
+docker events  # run this cmd 
+
+ docker events --filter 'event=create'  # this will moniter only create events
+
+we can check for the container also
+
+docker events --filter 'container=containerID'      # as same as container we can use image volume
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
